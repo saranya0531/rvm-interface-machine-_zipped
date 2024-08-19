@@ -1,0 +1,7 @@
+opencv-python
+flask
+roboflow
+numpy
+qrcode
+pillow
+pymongo

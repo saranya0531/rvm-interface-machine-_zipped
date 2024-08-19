@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Webcam and Image Display</title>
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="left">
+            <img id="video_feed" src="{{ url_for('video_feed') }}" width="685" height="512">
+        </div>
+        <div class="right">
+            <img id="qr-res" src="{{ url_for('static', filename='loading.gif') }}" width="248" height="248">
+        </div>
+    </div>
+    <div id="generate">generate</div>
+    <div id="clear">clear</div>
+    <style>
+        body{
+            background:url('static/bg.png');
+            background-repeat: no-repeat;
+            background-size: 75%;
+            /* background-position: center; */
+        }
+        .container {
+            display: flex;
+        }
+        .left {
+            position: fixed;
+            top: 13%;
+            left:5%;
+            width: 50%;
+        }
+        .right {
+            position: fixed;
+            top: 23%;
+            right: 18%;
+            width: 30%;
+        }
+        #generate{
+            position: fixed;
+            width: 280px;
+            height: 55px;
+            bottom: 29.5%;
+            right: 30.5%;
+            background-color: aqua;
+            opacity: 0.1;
+            /* visibility: hidden; */
+
+        }
+        #clear{
+            position: fixed;
+            width: 280px;
+            height: 55px;
+            bottom: 18%;
+            right: 30.5%;
+            background-color: aqua;
+            opacity: 0.1;
+            /* visibility: hidden; */
+        }
+    </style>
+<script type="text/javascript">
+    var video_feed = document.getElementById("video_feed");
+    var qr_img = document.getElementById("qr-res");
+    var clear_button = document.getElementById("clear");
+    var image_captured = false;
+
+    $(document).ready(function() {
+        $("#generate").click(function() {
+            if (!image_captured) {
+                // capture the current frame of the webcam and replace the video feed
+                var canvas = document.createElement('canvas');
+                canvas.width = video_feed.width;
+                canvas.height = video_feed.height;
+                var context = canvas.getContext('2d');
+                context.drawImage(video_feed, 0, 0, canvas.width, canvas.height);
+                var image = new Image();
+                image.src = canvas.toDataURL('image/jpeg');
+                video_feed.src = image.src;
+                image_captured = true;
+
+                $.ajax({
+                        url: "{{ url_for('process_image') }}",
+                        type: "POST",
+                        data: { "image": image.src },
+                        success: function(response) {
+                            // console.log(response);
+                            $("#qr-res").attr("src", response.image_path);
+
+                                  // replace the image with default after 15 seconds
+                                setTimeout(function() {
+                                    clear_button.click();
+                                }, 15000);
+                        }
+                });
+            }
+            console.log('gen clicked!');
+        });
+
+        $(clear_button).click(function() {
+            // clear the captured image and restart the video feed
+            if (image_captured) {
+                video_feed.src = "{{ url_for('video_feed') }}";
+                qr_img.src = "{{ url_for('static', filename='loading.gif') }}";
+                image_captured = false;
+            }
+            console.log('clear clicked!');
+        });
+    });
+</script>
+</body>
+</html>
